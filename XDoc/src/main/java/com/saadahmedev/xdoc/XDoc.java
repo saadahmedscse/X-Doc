@@ -28,6 +28,7 @@ import android.os.Build;
 import android.os.Environment;
 import android.view.View;
 
+import androidx.annotation.NonNull;
 import androidx.core.content.ContextCompat;
 import androidx.core.content.FileProvider;
 
@@ -38,9 +39,6 @@ import java.io.File;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.OutputStream;
-import java.text.SimpleDateFormat;
-import java.util.Date;
-import java.util.Locale;
 
 public class XDoc {
 
@@ -50,6 +48,7 @@ public class XDoc {
 
     private String folderName = null;
     private String fileName = null;
+    private File outputFile;
 
     private XDoc (Context context) {
         this.context = context;
@@ -72,6 +71,31 @@ public class XDoc {
     }
 
     public void download(View view, int docType) {
+        String filePrefix = null;
+        String extension = null;
+
+        switch (docType) {
+            case DocType.PDF_DOCUMENT: {
+                filePrefix = "X Doc PDF ";
+                extension = Extension.PDF_EXTENSION;
+                break;
+            }
+            case DocType.IMAGE: {
+                filePrefix = "X Doc Image ";
+                extension = Extension.IMAGE_EXTENSION;
+                break;
+            }
+        }
+
+        fileName = (fileName == null ? filePrefix + getTime() : fileName) + extension;
+        String dir = Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_DOWNLOADS).toString() + "/" + (folderName == null ? "XDoc" : folderName);
+
+        File file = new File(dir);
+        if (!file.exists()) file.mkdir();
+        outputFile = new File(dir, fileName);
+        if (outputFile.exists()) outputFile.delete();
+        fileName = null;
+
         switch (docType) {
             case DocType.PDF_DOCUMENT: {
                 downloadPdf(view);
@@ -82,6 +106,7 @@ public class XDoc {
                 break;
             }
         }
+        makeIntent(docType);
     }
 
     private void downloadPdf(View view) {
@@ -93,32 +118,12 @@ public class XDoc {
         view.draw(page.getCanvas());
         document.finishPage(page);
 
-        String fileName = (this.fileName == null ? getTime() : this.fileName) + Extension.PDF_EXTENSION;
-        String dir = Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_DOWNLOADS).toString() + "/" + (folderName == null ? "XDoc" : folderName);
-
-        File file = new File(dir);
-        if (!file.exists()) file.mkdir();
-        File outputFile = new File(dir, fileName);
-        if (outputFile.exists()) outputFile.delete();
-
         try {
             outputFile.createNewFile();
             OutputStream outputStream = new FileOutputStream(outputFile);
             document.writeTo(outputStream);
             document.close();
             outputStream.close();
-
-            //Intent to view the file
-            Intent intent = new Intent(Intent.ACTION_VIEW);
-            Uri uri = FileProvider.getUriForFile(
-                    context,
-                    context.getPackageName() + ".provider",
-                    outputFile
-            );
-            intent.setDataAndType(uri, "application/pdf");
-            intent.addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION);
-            context.startActivity(intent);
-
         } catch (IOException ignored) {}
     }
 
@@ -128,14 +133,6 @@ public class XDoc {
         view.setDrawingCacheEnabled(true);
         Bitmap bitmap = view.getDrawingCache();
 
-        String fileName = (this.fileName == null ? getTime() : this.fileName) + Extension.IMAGE_EXTENSION;
-        String dir = Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_DOWNLOADS).toString() + "/" + (folderName == null ? "XDoc" : folderName);
-
-        File file = new File(dir);
-        if (!file.exists()) file.mkdir();
-        File outputFile = new File(dir, fileName);
-        if (outputFile.exists()) outputFile.delete();
-
         try {
             FileOutputStream outputStream = new FileOutputStream(outputFile);
             bitmap.compress(Bitmap.CompressFormat.PNG, 100, outputStream);
@@ -143,12 +140,42 @@ public class XDoc {
         } catch (IOException ignored) {}
     }
 
+    private void makeIntent(int docType) {
+        String fileType = null;
+
+        switch (docType) {
+            case DocType.PDF_DOCUMENT: {
+                fileType = "application/pdf";
+                break;
+            }
+            case DocType.IMAGE: {
+                fileType = "image/*";
+                break;
+            }
+        }
+
+        try {
+            //Intent to view the file
+            Intent intent = new Intent(Intent.ACTION_VIEW);
+            Uri uri = FileProvider.getUriForFile(
+                    context,
+                    context.getPackageName() + ".provider",
+                    outputFile
+            );
+            intent.setDataAndType(uri, fileType);
+            intent.addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION);
+            context.startActivity(intent);
+        } catch (Exception ignored) {}
+    }
+
     private boolean hasPermission() {
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) return true;
         return ContextCompat.checkSelfPermission(context, Manifest.permission.WRITE_EXTERNAL_STORAGE) == PackageManager.PERMISSION_GRANTED;
     }
 
+    @NonNull
     private String getTime() {
-        return new SimpleDateFormat("dd/MM/yyyy - hh:mm:ss", Locale.getDefault()).format(new Date());
+        String time = String.valueOf(System.currentTimeMillis());
+        return time.substring(time.length() - 4);
     }
 }
