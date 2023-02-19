@@ -1,3 +1,19 @@
+/*
+ * Copyright 2018-2023 Saad Ahmed
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
 package com.saadahmedev.xdoc;
 
 import android.Manifest;
@@ -5,6 +21,7 @@ import android.annotation.SuppressLint;
 import android.content.Context;
 import android.content.Intent;
 import android.content.pm.PackageManager;
+import android.graphics.Bitmap;
 import android.graphics.pdf.PdfDocument;
 import android.net.Uri;
 import android.os.Build;
@@ -107,6 +124,23 @@ public class XDoc {
 
     private void downloadImage(View view) {
         if (!hasPermission()) throw new RuntimeException("Storage write permission is required");
+
+        view.setDrawingCacheEnabled(true);
+        Bitmap bitmap = view.getDrawingCache();
+
+        String fileName = (this.fileName == null ? getTime() : this.fileName) + Extension.IMAGE_EXTENSION;
+        String dir = Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_DOWNLOADS).toString() + "/" + (folderName == null ? "XDoc" : folderName);
+
+        File file = new File(dir);
+        if (!file.exists()) file.mkdir();
+        File outputFile = new File(dir, fileName);
+        if (outputFile.exists()) outputFile.delete();
+
+        try {
+            FileOutputStream outputStream = new FileOutputStream(outputFile);
+            bitmap.compress(Bitmap.CompressFormat.PNG, 100, outputStream);
+            outputStream.close();
+        } catch (IOException ignored) {}
     }
 
     private boolean hasPermission() {
