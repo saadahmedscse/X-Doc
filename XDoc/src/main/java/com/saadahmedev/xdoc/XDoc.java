@@ -125,6 +125,7 @@ public class XDoc {
             document.writeTo(outputStream);
             document.close();
             outputStream.close();
+            context.sendBroadcast(new Intent(Intent.ACTION_MEDIA_MOUNTED, Uri.parse("file://" + Environment.DIRECTORY_DOWNLOADS)));
         } catch (IOException ignored) {}
     }
 
@@ -138,6 +139,7 @@ public class XDoc {
             FileOutputStream outputStream = new FileOutputStream(outputFile);
             bitmap.compress(Bitmap.CompressFormat.PNG, 100, outputStream);
             outputStream.close();
+            context.sendBroadcast(new Intent(Intent.ACTION_MEDIA_MOUNTED, Uri.parse("file://" + Environment.DIRECTORY_DOWNLOADS)));
         } catch (IOException ignored) {}
     }
 
