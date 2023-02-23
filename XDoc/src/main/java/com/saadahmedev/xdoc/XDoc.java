@@ -88,7 +88,8 @@ public class XDoc {
         }
 
         fileName = (fileName == null ? filePrefix + getTime() : fileName) + extension;
-        String dir = Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_DOWNLOADS).toString() + "/" + (folderName == null ? "XDoc" : folderName);
+        String dir = Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_DOWNLOADS).toString();
+        dir += folderName == null ? "" : ("/" + folderName);
 
         File file = new File(dir);
         if (!file.exists()) file.mkdir();
