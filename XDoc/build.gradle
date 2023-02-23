@@ -16,6 +16,8 @@
 
 plugins {
     id 'com.android.library'
+    id 'maven-publish'
+    id 'signing'
 }
 
 android {
@@ -23,11 +25,18 @@ android {
     compileSdk 33
 
     defaultConfig {
-        minSdk 21
+        minSdk 16
         targetSdk 33
 
         testInstrumentationRunner "androidx.test.runner.AndroidJUnitRunner"
         consumerProguardFiles "consumer-rules.pro"
+    }
+
+    publishing {
+        singleVariant("release") {
+            withSourcesJar()
+            withJavadocJar()
+        }
     }
 
     buildTypes {
@@ -42,8 +51,67 @@ android {
     }
 }
 
-dependencies {
+task sourceJar(type: Jar) {
+    from android.sourceSets.main.java.srcDirs
+    classifier "sources"
+}
 
-    implementation 'androidx.appcompat:appcompat:1.6.0'
+def artifactVersion = "1.0.0-SNAPSHOT"
+
+publishing {
+    publications {
+        maven(MavenPublication) {
+            groupId 'com.saadahmedev.x-doc'
+            artifactId 'x-doc'
+            version artifactVersion
+            artifact(sourceJar)
+            artifact("$buildDir/outputs/aar/helperWidget-release.aar")
+
+            pom {
+                name = 'X-Doc PDF & Image Downloader'
+                description = 'A custom widget library to download pdf and image from layouts easily'
+                url = 'https://github.com/saadahmedscse/X-Doc'
+
+                licenses {
+                    license {
+                        name = 'The Apache License, Version 2.0'
+                        url = 'http://www.apache.org/licenses/LICENSE-2.0.txt'
+                    }
+                }
+                developers {
+                    developer {
+                        id = 'saadahmedscse'
+                        name = 'Saad Ahmed'
+                        email = 'saadahmedscse@gmail.com'
+                    }
+                }
+                scm {
+                    connection = 'scm:git:git://github.com/saadahmedscse/X-Doc.git'
+                    developerConnection = 'scm:git:ssh://github.com:saadahmedscse/X-Doc.git'
+                    url = 'https://github.com/saadahmedscse/X-Doc'
+                }
+            }
+        }
+    }
+    repositories {
+        maven {
+            def releaseUrl = "https://s01.oss.sonatype.org/content/repositories/releases/"
+            def snapshotUrl = "https://s01.oss.sonatype.org/content/repositories/snapshots/"
+            url = artifactVersion.endsWith('SNAPSHOT') ? snapshotUrl : releaseUrl
+
+            credentials {
+                username("username")
+                password("password")
+            }
+        }
+    }
+}
+
+dependencies {
+    implementation 'androidx.appcompat:appcompat:1.6.1'
     implementation 'com.google.android.material:material:1.8.0'
+}
+
+signing {
+    sign configurations.archives
 }
