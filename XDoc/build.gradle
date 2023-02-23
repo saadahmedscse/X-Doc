@@ -56,7 +56,7 @@ task sourceJar(type: Jar) {
     classifier "sources"
 }
 
-def artifactVersion = "1.0.0-SNAPSHOT"
+def artifactVersion = "1.0.0"
 
 publishing {
     publications {
@@ -65,11 +65,11 @@ publishing {
             artifactId 'x-doc'
             version artifactVersion
             artifact(sourceJar)
-            artifact("$buildDir/outputs/aar/helperWidget-release.aar")
+            artifact("$buildDir/outputs/aar/xdoc-release.aar")
 
             pom {
                 name = 'X-Doc PDF & Image Downloader'
-                description = 'A custom widget library to download pdf and image from layouts easily'
+                description = 'A custom library to download pdf and image from layouts easily'
                 url = 'https://github.com/saadahmedscse/X-Doc'
 
                 licenses {
