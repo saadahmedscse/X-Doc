@@ -23,6 +23,7 @@ import android.content.Intent;
 import android.content.pm.PackageManager;
 import android.graphics.Bitmap;
 import android.graphics.pdf.PdfDocument;
+import android.media.MediaScannerConnection;
 import android.net.Uri;
 import android.os.Build;
 import android.os.Environment;
@@ -125,7 +126,6 @@ public class XDoc {
             document.writeTo(outputStream);
             document.close();
             outputStream.close();
-            context.sendBroadcast(new Intent(Intent.ACTION_MEDIA_MOUNTED, Uri.parse("file://" + Environment.DIRECTORY_DOWNLOADS)));
         } catch (IOException ignored) {}
     }
 
@@ -139,7 +139,6 @@ public class XDoc {
             FileOutputStream outputStream = new FileOutputStream(outputFile);
             bitmap.compress(Bitmap.CompressFormat.PNG, 100, outputStream);
             outputStream.close();
-            context.sendBroadcast(new Intent(Intent.ACTION_MEDIA_MOUNTED, Uri.parse("file://" + Environment.DIRECTORY_DOWNLOADS)));
         } catch (IOException ignored) {}
     }
 
@@ -165,6 +164,12 @@ public class XDoc {
                     context.getPackageName() + ".provider",
                     outputFile
             );
+
+            if (outputFile.exists() && outputFile.isFile() && outputFile.getAbsolutePath().indexOf("/data/data") != 0) {
+                MediaScannerConnection.scanFile(context, new String[]{outputFile.getAbsolutePath()}, null, null);
+                context.sendBroadcast(new Intent(Intent.ACTION_MEDIA_SCANNER_SCAN_FILE, Uri.fromFile(outputFile)));
+            }
+
             intent.setDataAndType(uri, fileType);
             intent.addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION);
             context.startActivity(intent);
